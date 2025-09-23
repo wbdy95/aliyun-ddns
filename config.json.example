@@ -1,0 +1,9 @@
+{
+  "access_key_id": "your_access_key_id",
+  "access_key_secret": "your_access_key_secret",
+  "domain_name": "example.com",
+  "sub_domain": "home",
+  "record_type": "A",
+  "ttl": 600,
+  "check_interval": 300
+}

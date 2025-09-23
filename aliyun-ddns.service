@@ -1,0 +1,27 @@
+[Unit]
+Description=Aliyun DDNS Client
+Documentation=https://github.com/example/aliyun-ddns
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ddns
+Group=ddns
+WorkingDirectory=/opt/aliyun-ddns
+ExecStart=/opt/aliyun-ddns/aliyun-ddns /opt/aliyun-ddns/config.json
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aliyun-ddns
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/aliyun-ddns
+
+[Install]
+WantedBy=multi-user.target
