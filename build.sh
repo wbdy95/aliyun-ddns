@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Aliyun DDNS 构建脚本
-# 支持多架构和老旧机器
+# 支持多架构和老旧机器（使用静态链接，避免GLIBC依赖）
 
-set -e
+set -euo pipefail
 
 echo "开始构建 Aliyun DDNS..."
 
@@ -16,6 +16,10 @@ fi
 # 创建输出目录
 mkdir -p bin
 
+# 静态构建配置（禁用CGO，使用纯Go解析器）
+export CGO_ENABLED=0
+BUILDTAGS="-tags netgo,osusergo"
+
 # 构建参数
 APP_NAME="aliyun-ddns"
 VERSION=$(date +"%Y%m%d%H%M%S")
@@ -23,22 +27,21 @@ LDFLAGS="-s -w -X main.Version=${VERSION}"
 
 echo "构建版本: ${VERSION}"
 
-# 构建当前平台版本
-echo "构建当前平台版本..."
-go build -ldflags "${LDFLAGS}" -o bin/${APP_NAME} .
+echo "构建当前平台版本(静态)..."
+go build -trimpath ${BUILDTAGS} -ldflags "${LDFLAGS}" -o bin/${APP_NAME} .
 
 # 构建常见Linux架构版本（兼容老旧机器）
-echo "构建 Linux amd64 版本..."
-GOOS=linux GOARCH=amd64 go build -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-amd64 .
+echo "构建 Linux amd64 版本(静态)..."
+GOOS=linux GOARCH=amd64 go build -trimpath ${BUILDTAGS} -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-amd64 .
 
-echo "构建 Linux 386 版本（32位系统）..."
-GOOS=linux GOARCH=386 go build -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-386 .
+echo "构建 Linux 386 版本（32位，静态）..."
+GOOS=linux GOARCH=386 go build -trimpath ${BUILDTAGS} -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-386 .
 
-echo "构建 Linux arm 版本（ARM设备）..."
-GOOS=linux GOARCH=arm go build -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-arm .
+echo "构建 Linux arm 版本（ARMv6+，静态）..."
+GOOS=linux GOARCH=arm GOARM=6 go build -trimpath ${BUILDTAGS} -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-arm .
 
-echo "构建 Linux arm64 版本（ARM64设备）..."
-GOOS=linux GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-arm64 .
+echo "构建 Linux arm64 版本（静态）..."
+GOOS=linux GOARCH=arm64 go build -trimpath ${BUILDTAGS} -ldflags "${LDFLAGS}" -o bin/${APP_NAME}-linux-arm64 .
 
 # 设置执行权限
 chmod +x bin/*
