@@ -1,9 +1,23 @@
 {
-  "access_key_id": "your_access_key_id",
-  "access_key_secret": "your_access_key_secret",
-  "domain_name": "example.com",
-  "sub_domain": "home",
-  "record_type": "A",
-  "ttl": 600,
+  "providers": [
+    {
+      "type": "aliyun",
+      "access_key_id": "your_aliyun_access_key_id",
+      "access_key_secret": "your_aliyun_access_key_secret",
+      "domain_name": "example.com",
+      "sub_domain": "www",
+      "record_type": "A",
+      "ttl": 600
+    },
+    {
+      "type": "cloudflare",
+      "api_token": "your_cloudflare_api_token",
+      "zone_id": "your_cloudflare_zone_id",
+      "domain_name": "example.com",
+      "sub_domain": "www",
+      "record_type": "A",
+      "ttl": 600
+    }
+  ],
   "check_interval": 300
 }

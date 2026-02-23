@@ -1,23 +1,26 @@
-# Aliyun DDNS - 阿里云动态DNS客户端
+# Multi-DDNS - 多提供商动态DNS客户端
 
-一个用Go语言编写的阿里云DDNS客户端，支持自动更新域名解析记录，兼容老旧Linux系统。
+一个用Go语言编写的多提供商DDNS客户端，支持阿里云DNS和Cloudflare，自动更新域名解析记录，兼容老旧Linux系统。
 
 ## 功能特性
 
 - ✅ 自动检测公网IP变化
-- ✅ 自动更新阿里云DNS解析记录
+- ✅ 支持多个DNS提供商（阿里云、Cloudflare）
+- ✅ 一个配置文件可同时配置多个提供商
 - ✅ 支持多种IP检测服务，提高可靠性
 - ✅ 支持老旧Linux系统（Go 1.13+）
 - ✅ 支持多种架构（amd64, 386, arm, arm64）
 - ✅ systemd服务集成
 - ✅ 详细的日志记录
+- ✅ 向后兼容旧版配置格式
 - ✅ 安全的配置文件权限管理
 
 ## 系统要求
 
 - Linux系统
 - 网络连接
-- 阿里云域名和API密钥
+- 阿里云域名和API密钥（使用阿里云时）
+- Cloudflare账号和API Token（使用Cloudflare时）
 
 ## 快速开始
 
@@ -43,17 +46,47 @@ cp config.json.example config.json
 nano config.json
 ```
 
-配置文件说明：
+#### 新版配置格式（推荐）
+
+支持多提供商配置：
+
+```json
+{
+  "providers": [
+    {
+      "type": "aliyun",
+      "access_key_id": "你的阿里云AccessKey ID",
+      "access_key_secret": "你的阿里云AccessKey Secret",
+      "domain_name": "example.com",
+      "sub_domain": "www",
+      "record_type": "A",
+      "ttl": 600
+    },
+    {
+      "type": "cloudflare",
+      "api_token": "你的Cloudflare API Token",
+      "zone_id": "你的Cloudflare Zone ID（可选，程序会自动获取）",
+      "domain_name": "example.com",
+      "sub_domain": "www",
+      "record_type": "A",
+      "ttl": 600
+    }
+  ],
+  "check_interval": 300
+}
+```
+
+#### 旧版配置格式（向后兼容）
 
 ```json
 {
   "access_key_id": "你的阿里云AccessKey ID",
-  "access_key_secret": "你的阿里云AccessKey Secret", 
-  "domain_name": "example.com",        // 主域名
-  "sub_domain": "home",                // 子域名，最终会解析 home.example.com
-  "record_type": "A",                  // 记录类型，通常为A
-  "ttl": 600,                         // TTL值，单位秒
-  "check_interval": 300               // 检查间隔，单位秒（5分钟）
+  "access_key_secret": "你的阿里云AccessKey Secret",
+  "domain_name": "example.com",
+  "sub_domain": "home",
+  "record_type": "A",
+  "ttl": 600,
+  "check_interval": 300
 }
 ```
 
@@ -67,12 +100,26 @@ nano config.json
 sudo ./install.sh
 ```
 
-## 获取阿里云API密钥
+## 获取API密钥
+
+### 阿里云
 
 1. 登录阿里云控制台
 2. 访问 [AccessKey管理页面](https://ram.console.aliyun.com/manage/ak)
 3. 创建AccessKey，记录AccessKey ID和AccessKey Secret
 4. 确保账户有域名DNS管理权限
+
+### Cloudflare
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. 进入 "My Profile" → "API Tokens"
+3. 创建一个具有以下权限的Token：
+   - Zone - DNS - Edit
+   - Zone - Zone - Read
+4. （可选）获取Zone ID：
+   - 进入你的域名设置
+   - 在右侧边栏可以找到Zone ID
+   - 或者在API URL中查看
 
 ## 安装为系统服务
 
@@ -133,7 +180,7 @@ sudo systemctl disable aliyun-ddns
 构建脚本会自动生成多个架构的可执行文件：
 
 - `aliyun-ddns-linux-amd64`: 64位Linux系统
-- `aliyun-ddns-linux-386`: 32位Linux系统  
+- `aliyun-ddns-linux-386`: 32位Linux系统
 - `aliyun-ddns-linux-arm`: ARM设备（如树莓派等）
 - `aliyun-ddns-linux-arm64`: ARM64设备
 
@@ -147,6 +194,34 @@ sudo systemctl disable aliyun-ddns
 - Ubuntu 14.04+
 - Debian 8+
 - 其他支持glibc 2.17+的Linux发行版
+
+## 配置说明
+
+### 提供商类型（type）
+
+- `aliyun`: 阿里云DNS
+- `cloudflare`: Cloudflare DNS
+
+### 通用参数
+
+- `domain_name`: 主域名
+- `sub_domain`: 子域名
+- `record_type`: 记录类型（A表示IPv4，AAAA表示IPv6）
+- `ttl`: DNS缓存时间（秒）
+
+### 阿里云特有参数
+
+- `access_key_id`: 阿里云AccessKey ID
+- `access_key_secret`: 阿里云AccessKey Secret
+
+### Cloudflare特有参数
+
+- `api_token`: Cloudflare API Token
+- `zone_id`: Cloudflare Zone ID（可选，程序会自动获取）
+
+### 全局参数
+
+- `check_interval`: IP检查间隔（秒）
 
 ## 故障排除
 
@@ -163,14 +238,19 @@ sudo systemctl disable aliyun-ddns
    - 确保可以访问外网
    - 尝试手动访问IP检测服务
 
-3. **API错误**
+3. **API错误（阿里云）**
    - 检查AccessKey是否正确
    - 确保账户有DNS管理权限
    - 检查域名是否已添加到阿里云
 
-4. **DNS记录不存在**
+4. **API错误（Cloudflare）**
+   - 检查API Token是否正确
+   - 确保Token有DNS编辑权限
+   - 检查域名是否已添加到Cloudflare
+
+5. **DNS记录不存在**
    - 程序会自动尝试创建DNS记录
-   - 确保域名已托管到阿里云DNS
+   - 确保域名已托管到对应的DNS提供商
 
 ### 调试模式
 
