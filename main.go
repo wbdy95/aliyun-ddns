@@ -709,7 +709,16 @@ func updateProvider(provider DNSProvider) error {
 
 	// 更新DNS记录
 	log.Printf("[%s] 更新DNS记录: %s -> %s", provider.GetName(), recordIP, currentIP)
-	err = provider.UpdateRecord(record.ID, currentIP)
+
+	// 获取正确的记录ID（阿里云用RecordId，Cloudflare用ID）
+	var recordID string
+	if record.RecordId != "" {
+		recordID = record.RecordId
+	} else {
+		recordID = record.ID
+	}
+
+	err = provider.UpdateRecord(recordID, currentIP)
 	if err != nil {
 		return fmt.Errorf("[%s] 更新DNS记录失败: %v", provider.GetName(), err)
 	}
